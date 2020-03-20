@@ -1,0 +1,28 @@
+
+/deep/path:hover {
+  stroke-opacity: .5;
+}
+/deep/rect:hover {
+  stroke-opacity: .5;
+}
+
+
+.link-label:hover {
+  stroke-opacity: .9;
+  font-size: 20px;
+}
+
+button.map-button {
+  line-height: 12px;
+  position: absolute;
+  margin-left: 4px;
+  border-radius: 50%;
+  background-color: lightblue;
+
+}
+
+
+i{
+  font-size: 24px;
+}
+

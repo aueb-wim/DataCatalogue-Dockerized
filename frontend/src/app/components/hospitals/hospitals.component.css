@@ -1,0 +1,49 @@
+h1{
+  font-size: xx-large;
+  color: #2196F3;
+  margin-left: 40%;
+  font-family: Helvetica;
+}
+div.inactive{
+  display: inline-block;
+  margin-top: 50px;
+  cursor: not-allowed;
+  pointer-events: none;
+  font-family:Helvetica;
+
+}
+
+div.active{
+  display: inline-flex;
+  font-family:Helvetica;
+}
+
+div mat-card{
+  display: block;
+  text-align: center;
+  margin-left: 20px;
+  margin-top: 20px;
+  width:130px;
+  height: 160px;
+  z-index:999;
+}
+
+div mat-card mat-card-title{
+  font-family:Helvetica;
+  font-size: 17px;
+  font-weight: bolder;
+}
+
+.thumbnail:hover {
+  position:relative;
+  width:135px;
+  height: 170px;
+  display:block;
+  z-index:999;
+}
+
+mat-form-field{
+  margin-bottom: 50px;
+  alignment: center;
+  font-family:Helvetica;
+}
