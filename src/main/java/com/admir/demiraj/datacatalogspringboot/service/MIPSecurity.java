@@ -14,7 +14,6 @@
 
 package com.admir.demiraj.datacatalogspringboot.service;
 
-import com.admir.demiraj.datacatalogspringboot.exceptionHandlers.UserActionLogging;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.AuthoritiesExtractor;
@@ -25,7 +24,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -40,14 +38,11 @@ import org.springframework.security.oauth2.client.resource.BaseOAuth2ProtectedRe
 import org.springframework.security.oauth2.client.token.grant.code.AuthorizationCodeResourceDetails;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.*;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.request.RequestContextListener;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -83,6 +78,11 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
         return principal;
     }
 
+    @RequestMapping("/test")
+    public String test() {
+        return "WORKING.........";
+    }
+
     @RequestMapping("/userRoles")
     public Collection userRoles(Authentication auth) {
         //Authentication auth = securityContextHolder.getContext().getAuthentication();
@@ -105,32 +105,6 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
         return registration;
     }
 
-    private LogoutHandler authLogoutHandler() {
-        return (request, response, authentication) -> {
-            logout();
-        };
-    }
-    public void logout() {
-
-        UserActionLogging.LogAction("refresh token ", this.oauth2ClientContext.getAccessToken().getRefreshToken().getValue());
-        RestTemplate restTemplate = new RestTemplate();
-        MultiValueMap<String, String> formParams = new LinkedMultiValueMap<>();
-        formParams.add("client_id", keycloak().client.getClientId());
-        formParams.add("client_secret", keycloak().client.getClientSecret());
-        formParams.add("refresh_token", this.oauth2ClientContext.getAccessToken().getRefreshToken().getValue());
-
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
-
-        UserActionLogging.LogAction("logoutUri is ", "/");
-        RequestEntity<MultiValueMap<String, String>> requestEntity =
-                new RequestEntity<>(formParams, httpHeaders, HttpMethod.POST,
-                        URI.create("/"));
-
-
-        ResponseEntity<String> responseEntity = restTemplate.exchange(requestEntity, String.class);
-        System.out.println("logout OK");
-    }
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         //http.addFilterBefore(new CORSFilter(), ChannelProcessingFilter.class);
@@ -173,19 +147,18 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
                         "//mapping/getsample").permitAll()
 
 
-                .anyRequest().hasRole("Data Manager")
-                .and().exceptionHandling().authenticationEntryPoint(new CustomLoginUrlAuthenticationEntryPoint("http://195.251.252.222:2443/login"))
-                //.and().logout().addLogoutHandler(authLogoutHandler()).logoutSuccessUrl("/") // added
-                //.and().logout().permitAll()// added
+                //.anyRequest().hasRole("Data Manager")
+                .anyRequest().authenticated()//added
+                .and().exceptionHandling().authenticationEntryPoint(new CustomLoginUrlAuthenticationEntryPoint("/login"))
                 .and().csrf().csrfTokenRepository(csrfTokenRepository())
                 .and().addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class)
-
                 .addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
                 .logout()
-                .logoutSuccessUrl("http://195.251.252.222:2442")
-                .invalidateHttpSession(true)
+                .logoutSuccessUrl("/")
+                //.invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID");
-
+        //login-->"http://172.28.1.2:8086/login"
+        //logout --> http://172.28.1.3:4200
 
     }
     private Filter ssoFilter() {
@@ -207,8 +180,9 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
                 client.getResource().getUserInfoUri(), client.getClient().getClientId());
         tokenServices.setRestTemplate(template);
         filter.setTokenServices(tokenServices);
-        filter.setAuthenticationSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("http://195.251.252.222:2442/pathologies"));//<--- NEW
+        filter.setAuthenticationSuccessHandler(new SimpleUrlAuthenticationSuccessHandler());//<--- NEW
         return filter;
+        //"http://172.28.1.3:4200/pathologies"
     }
 
     @Bean
@@ -260,7 +234,7 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*"));
+        configuration.setAllowedOrigins(Arrays.asList("*","http://172.28.1.3:4200"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token","x-requested-with","X-Requested-With","XMLHttpRequest"));
         configuration.setExposedHeaders(Arrays.asList("x-auth-token"));
@@ -296,6 +270,8 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
                         response.addCookie(cookie);
                     }
                 }
+                System.out.println("Received request from:"+request.getRequestURL()+request);
+                System.out.println("Responce headers are:"+response.getHeaders("Origin")+response);
                 filterChain.doFilter(request, response);
             }
         };
@@ -334,4 +310,10 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
     }
 
 
+    ////////////////////extra addition for docker
+
+    @Bean
+    public RequestContextListener requestContextListener() {
+        return new RequestContextListener();
+    }
 }
