@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -43,7 +44,7 @@ public class PathologyDAO {
     public Pathology getPathologyByName(String pathologyName){
         List<Pathology> pathologies = findAll();
         for(Pathology p : pathologies){
-            if(p.getName().toLowerCase().equals(pathologyName)){
+            if(p.getName().toLowerCase().equals(pathologyName.toLowerCase())){
                 return p;
             }
 
@@ -54,7 +55,7 @@ public class PathologyDAO {
     public boolean isPathologyPresent(String pathologyName){
         List<Pathology> pathologies = findAll();
         for(Pathology p : pathologies){
-            if(p.getName().equals(pathologyName)){
+            if(p.getName().toLowerCase().equals(pathologyName.toLowerCase())){
                 return true;
             }
 
@@ -68,15 +69,38 @@ public class PathologyDAO {
     }
 
 
-
     public Versions getLatestCdeVersionByPathologyName(String pathologyName){
         Pathology pathology = getPathologyByName(pathologyName);
         Versions latestCdeVersion = null;
+
         for(Versions v: pathology.getVersions()){
             if(v.getCdevariables()!= null){
                 latestCdeVersion = v;
             }
         }
+
+        if(latestCdeVersion == null){
+            // Create new empty cde version in case it is not found
+            latestCdeVersion = new Versions();
+            // This is not an official version - once we make changes to it, it will be saved as version v1
+            latestCdeVersion.setName("v0");
+            // Default values in cde variable
+            CDEVariables cdeVariable = new CDEVariables();
+            cdeVariable.setCode("sample");
+            List<CDEVariables> cdeVariablesList = new ArrayList<>();
+            cdeVariablesList.add(cdeVariable);
+            // Default values in version
+            latestCdeVersion.setCdevariables(cdeVariablesList);
+        }else{
+            // append the sample variable at the end cde variables list
+            List<CDEVariables> cdeVariablesList = latestCdeVersion.getCdevariables();
+            CDEVariables cdeVariable = new CDEVariables();
+            cdeVariable.setCode("sample");
+            cdeVariablesList.add(cdeVariable);
+            latestCdeVersion.setCdevariables(cdeVariablesList);
+
+        }
+
         return latestCdeVersion;
     }
 

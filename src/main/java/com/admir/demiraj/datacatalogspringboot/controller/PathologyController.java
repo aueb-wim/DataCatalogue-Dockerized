@@ -3,11 +3,7 @@ package com.admir.demiraj.datacatalogspringboot.controller;
 import com.admir.demiraj.datacatalogspringboot.dao.PathologyDAO;
 import com.admir.demiraj.datacatalogspringboot.resources.Pathology;
 import com.admir.demiraj.datacatalogspringboot.resources.Versions;
-import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigInteger;
@@ -18,9 +14,7 @@ import java.util.List;
 
 
 
-@Configuration
-@EnableWebSecurity
-@EnableOAuth2Client
+
 @RestController
 @RequestMapping("/pathology")
 public class PathologyController {
@@ -58,6 +52,8 @@ public class PathologyController {
 
         return pathologyDAO.getLatestCdeVersionByPathologyName(pathologyName);
     }
+
+
 
     @PostMapping(value = "/newPathology")
     public void create2(@RequestBody String pathologyName){

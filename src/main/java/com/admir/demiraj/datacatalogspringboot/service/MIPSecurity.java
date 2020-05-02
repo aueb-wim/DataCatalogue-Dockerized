@@ -30,6 +30,8 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.oauth2.client.OAuth2ClientContext;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 import org.springframework.security.oauth2.client.filter.OAuth2ClientAuthenticationProcessingFilter;
@@ -42,7 +44,6 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 import org.springframework.security.web.csrf.*;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.RequestContextListener;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -63,10 +64,9 @@ import java.security.Principal;
 import java.util.*;
 
 
-
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @Configuration
-//@EnableOAuth2Sso
 @RestController
 @EnableWebSecurity
 @EnableOAuth2Client
@@ -78,18 +78,12 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
         return principal;
     }
 
-    @RequestMapping("/test")
-    public String test() {
-        return "WORKING.........";
-    }
-
     @RequestMapping("/userRoles")
-    public Collection userRoles(Authentication auth) {
-        //Authentication auth = securityContextHolder.getContext().getAuthentication();
-        System.out.println("user roles are: "+auth.getAuthorities());
+    public Collection userRoles(Authentication auth) throws NoSuchFieldException {
         Collection collection = auth.getAuthorities();
         return collection;
     }
+
 
     @Autowired
     @Qualifier("oauth2ClientContext")
@@ -146,19 +140,17 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
                         "/report/getVariableReport/*",
                         "//mapping/getsample").permitAll()
 
-
+                //NOTE ADD THIS SINCE IT IS BEING REMOVED ONLY FOR TESTING
                 //.anyRequest().hasRole("Data Manager")
-                .anyRequest().authenticated()//added
-                .and().exceptionHandling().authenticationEntryPoint(new CustomLoginUrlAuthenticationEntryPoint("/login"))
+                .and().exceptionHandling().authenticationEntryPoint(new CustomLoginUrlAuthenticationEntryPoint("http://192.168.1.25:8086/login"))
                 .and().csrf().csrfTokenRepository(csrfTokenRepository())
                 .and().addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class)
                 .addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
                 .logout()
-                .logoutSuccessUrl("/")
-                //.invalidateHttpSession(true)
+                .logoutSuccessUrl("http://localhost:4200")
+                .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID");
-        //login-->"http://172.28.1.2:8086/login"
-        //logout --> http://172.28.1.3:4200
+
 
     }
     private Filter ssoFilter() {
@@ -172,17 +164,15 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
     //
     private Filter ssoFilter(ClientResources client, String path) {
         OAuth2ClientAuthenticationProcessingFilter filter = new OAuth2ClientAuthenticationProcessingFilter(path);
-        System.out.println("client is:"+client.getClient());
-
         OAuth2RestTemplate template = new OAuth2RestTemplate(client.getClient(), oauth2ClientContext);
         filter.setRestTemplate(template);
         UserInfoTokenServices tokenServices = new UserInfoTokenServices(
                 client.getResource().getUserInfoUri(), client.getClient().getClientId());
+        System.out.println("token type is: "+client.getResource().getTokenType());
         tokenServices.setRestTemplate(template);
         filter.setTokenServices(tokenServices);
-        filter.setAuthenticationSuccessHandler(new SimpleUrlAuthenticationSuccessHandler());//<--- NEW
+        filter.setAuthenticationSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("http://localhost:4200/pathologies"));//<--- NEW
         return filter;
-        //"http://172.28.1.3:4200/pathologies"
     }
 
     @Bean
@@ -234,7 +224,7 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*","http://172.28.1.3:4200"));
+        configuration.setAllowedOrigins(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token","x-requested-with","X-Requested-With","XMLHttpRequest"));
         configuration.setExposedHeaders(Arrays.asList("x-auth-token"));
@@ -270,8 +260,6 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
                         response.addCookie(cookie);
                     }
                 }
-                System.out.println("Received request from:"+request.getRequestURL()+request);
-                System.out.println("Responce headers are:"+response.getHeaders("Origin")+response);
                 filterChain.doFilter(request, response);
             }
         };
@@ -310,10 +298,4 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
     }
 
 
-    ////////////////////extra addition for docker
-
-    @Bean
-    public RequestContextListener requestContextListener() {
-        return new RequestContextListener();
-    }
 }
