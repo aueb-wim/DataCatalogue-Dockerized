@@ -35,7 +35,7 @@ export class FormUploadComponent implements OnInit {
       if (event.type === HttpEventType.UploadProgress) {
         this.progress.percentage = Math.round(100 * event.loaded / event.total);
       } else if (event instanceof HttpResponse) {
-        alert("File Uploaded Successfully!!");
+        alert("File Uploaded Successfully!!")
       }
 
     },error => {
@@ -56,7 +56,7 @@ export class FormUploadComponent implements OnInit {
         data=>{
           console.log("sample data is: "+data);
           window.open("http://localhost:4200/mapping/getsample/"+this.sampleNameVersion);
-           console.log('XLSX template downloaded...');
+          console.log('XLSX template downloaded...');
         },
         error => {
           if(error.status=='401'){
