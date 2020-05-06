@@ -1,39 +1,39 @@
 {
   "/login": {
-    "target": "http://172.28.1.2:8086",
+    "target": "http://datacatalogue_backend:8086/",
     "secure": false,
     "logLevel": "debug"
   },
 
   "/home": {
-    "target": "http://172.28.1.2:8086",
+    "target": "http://datacatalogue_backend:8086/",
     "secure": false,
     "logLevel": "debug"
   },
 
   "/user": {
-    "target": "http://172.28.1.2:8086",
+    "target": "http://datacatalogue_backend:8086/",
     "secure": false,
     "logLevel": "debug"
   },
   "/userRoles": {
-    "target": "http://172.28.1.2:8086",
+    "target": "http://datacatalogue_backend:8086/",
     "secure": false,
     "logLevel": "debug"
   },
 
   "/logout": {
-    "target": "http://172.28.1.2:8086",
+    "target": "http://datacatalogue_backend:8086/",
     "secure": false,
     "logLevel": "debug"
   },
   "/hospital/readExcel": {
-    "target": "http://172.28.1.2:8086",
+    "target": "http://datacatalogue_backend:8086/",
     "secure": false,
     "logLevel": "debug"
   },
   "/CDE/readExcel": {
-    "target": "http://172.28.1.2:8086",
+    "target": "http://datacatalogue_backend:8086/",
     "secure": false,
     "logLevel": "debug"
   }

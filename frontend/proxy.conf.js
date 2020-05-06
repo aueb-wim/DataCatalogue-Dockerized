@@ -47,7 +47,7 @@
       "/pathology/deletePathology"
 
     ],
-    target: "http://172.28.1.2:8086",
+    target: "http://datacatalogue_backend:8086/",
     secure: false
   }
 ];

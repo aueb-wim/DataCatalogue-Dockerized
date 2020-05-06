@@ -1,45 +1,33 @@
 version: '3.2'
 services:
-  backend:
+  datacatalogue_backend:
     build: ''
     image: spring-boot-backend
-    expose:
-      - 8086
     ports:
-      - '8086:8086'
+      - 8086
     depends_on:
-      - postgres
+      - datacatalogue_postgres
     links:
-      - postgres
+      - datacatalogue_postgres
     restart: on-failure
-    networks:
-      datalogue_net:
-        ipv4_address: 172.28.1.2
 
-  frontend:
+  datacatalogue_frontend:
     build: frontend
     image: angular-frontend
-    expose:
-      - 4200
     ports:
-      - '4200:4200'
+      - 4200:4200
     depends_on:
-      - backend
+      - datacatalogue_backend
     links:
-      - backend
+      - datacatalogue_backend
     restart: on-failure
-    networks:
-      datalogue_net:
-        ipv4_address: 172.28.1.3
 
-  postgres:
-    image: postgres:latest
+
+  datacatalogue_postgres:
+    image: postgres:9.5
     container_name: postgres
-    expose:
-      - 5432
     ports:
-      - 5432:5432
-    
+      - 5432
     environment:
       - POSTGRES_DB=datacatalog
       - POSTGRES_USER=andy
@@ -49,16 +37,3 @@ services:
       - ./postgres_data:/var/lib/postgresql/data
 
     restart: on-failure
-    networks:
-      datalogue_net:
-        ipv4_address: 172.28.1.1
-
-#volumes:
-#  db-data:
-
-networks:
-  datalogue_net:
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.28.0.0/16
