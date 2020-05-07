@@ -41,6 +41,7 @@
       "/report/uploadAllReports",
       "/pathology/allPathologies",
       "/pathology/allPathologies//latest_cde_version",
+      "/pathology/allPathologies/pathId//latest_cde_version",
       "/pathology/allPathologies/",
       "/pathology/allPathologies//name",
       "/pathology/newPathology",
