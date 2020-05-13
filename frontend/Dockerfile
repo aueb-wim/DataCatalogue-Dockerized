@@ -23,6 +23,5 @@ RUN npm install @angular/cli@6.2.3
 COPY . /app
 
 # start app
-CMD cd
-CMD ng serve --host 0.0.0.0
-
+RUN cd
+CMD bash -c "ng serve --host 0.0.0.0 --prod --baseHref /datacatalogue/ --servePath /datacatalogue/ --optimization=true --watch=false --verbose=false"
