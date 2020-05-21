@@ -44,4 +44,5 @@ services:
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
 
+
     restart: on-failure

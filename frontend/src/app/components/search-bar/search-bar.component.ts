@@ -1,5 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {HospitalService} from "../../shared/hospital.service";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-search-bar',
@@ -15,7 +16,7 @@ export class SearchBarComponent implements OnInit {
   @Input('loggedIn2')loggedIn2:boolean;
   @Input('userName2')userName2:string;
 
-  constructor(private hospitalService:HospitalService) {
+  constructor(private hospitalService:HospitalService,private router: Router) {
     this.checkIfLoggedIn();
   }
 
@@ -28,10 +29,10 @@ export class SearchBarComponent implements OnInit {
     this.selectedItem = newValue;
   }
 
-
-  login(){
+  // login2 works fine and should be restored when keycloak is up again
+  login2(){
    // this.hospitalService.login().subscribe();
-    window.location.href ="/login";
+    this.router.navigateByUrl('/login');
     this.hospitalService.getUser().subscribe(user=>{
       if(user!=null){
         this.loggedIn = true;
@@ -40,7 +41,9 @@ export class SearchBarComponent implements OnInit {
       }
     });
   }
-
+ login(){
+    alert('Login is currently unavailable.');
+ }
   cdeReadExcel(){
     this.hospitalService.cdeReadExcel().subscribe();
   }
