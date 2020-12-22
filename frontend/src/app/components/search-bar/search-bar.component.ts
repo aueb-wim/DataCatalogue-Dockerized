@@ -30,6 +30,7 @@ export class SearchBarComponent implements OnInit {
   }
 
   // login2 works fine and should be restored when keycloak is up again
+
   login3(){
     //CHANGE THIS TO CONTAINER NAME
     //location.href = '/login';
@@ -54,6 +55,7 @@ export class SearchBarComponent implements OnInit {
     window.location.href = 'datacatalogue/login';
 
     //document.location.href = '/login',true;
+
     this.hospitalService.getUser().subscribe(user=>{
       if(user!=null){
         this.loggedIn = true;

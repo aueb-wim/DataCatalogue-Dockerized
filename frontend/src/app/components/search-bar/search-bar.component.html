@@ -10,13 +10,16 @@
       <a [ngClass]="{'ac': selectedItem == 3}" (click)="listClick($event, 3)" routerLink="/hospitals/cde-variables">CDE Variables</a>
     </li>
     <li>
-      <a [ngClass]="{'ac': selectedItem == 4}" (click)="listClick($event, 4)" href="/hospitals/about">About</a>
+      <a [ngClass]="{'ac': selectedItem == 4}" (click)="listClick($event, 4)" routerLink="/hospitals/about">About</a>
     </li>
     <button *ngIf="!loggedIn" (click)="login()">login</button>
     <button *ngIf="loggedIn" (click)="logout()">{{userName}}</button>
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> de3dd1b8f00a1e75081c1ea53649fa533afbd34b
   </ul>
 
 

@@ -186,6 +186,7 @@ this.goBack();
   uploadFile() {
     console.log('Uploading file--: '+this.sampleFileName);
     this.router.navigateByUrl(this.location.path() + '/'+this.pathologyName+'/' +this.hospitalName+'/'+ this.sampleFileName);
+
   }
 
 

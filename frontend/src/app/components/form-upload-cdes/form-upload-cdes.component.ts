@@ -4,7 +4,9 @@ import {HospitalService} from "../../shared/hospital.service";
 import {HttpClient, HttpEventType, HttpResponse} from "@angular/common/http";
 //import {FileSaver,Blob} from 'angular-file-saver';
 import { saveAs } from 'file-saver';
+
 import {ActivatedRoute} from "@angular/router";
+
 
 
 @Component({

@@ -3,7 +3,9 @@ import { HttpClient, HttpResponse, HttpEventType } from '@angular/common/http';
 import {HospitalService} from "../../shared/hospital.service";
 import {Observable} from "rxjs";
 import { saveAs } from 'file-saver';
+
 import {ActivatedRoute, Params} from "@angular/router";
+
 
 
 @Component({

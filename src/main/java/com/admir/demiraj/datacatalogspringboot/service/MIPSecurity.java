@@ -206,7 +206,9 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
                 .addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
                 /*
                 //NOTE ADD THIS SINCE IT IS BEING REMOVED ONLY FOR TESTING
+
                 .anyRequest().hasRole("dc_admin")
+
                 .and().csrf().csrfTokenRepository(csrfTokenRepository())
                 .and().exceptionHandling().authenticationEntryPoint(new CustomLoginUrlAuthenticationEntryPoint("http://localhost:8086/login"))
                 .and().addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class)

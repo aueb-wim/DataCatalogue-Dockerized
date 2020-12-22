@@ -52,7 +52,9 @@ export class XhrInterceptor implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler) {
     const xhr = req.clone({
-      headers: req.headers.set('X-Requested-With', 'XMLHttpRequest')
+      headers: req.headers.set('X-Requested-With', 'XMLHttpRequest'),
+      //added this to see if base url will be added in all requests
+      url: `/datacatalogue${req.url}`
     });
     return next.handle(xhr);
   }
