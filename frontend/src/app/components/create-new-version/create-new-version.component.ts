@@ -1,6 +1,6 @@
 import {AfterViewInit, Component, Inject, OnInit} from '@angular/core';
 import {HospitalService} from "../../shared/hospital.service";
-import {ActivatedRoute, Params} from "@angular/router";
+import {ActivatedRoute, Params, Router} from "@angular/router";
 import {Location} from "@angular/common";
 import {MatDialog} from "@angular/material";
 
@@ -49,9 +49,10 @@ export class CreateNewVersionComponent implements OnInit, AfterViewInit {
   latestCDEVersion:any;
   versionName: string;
   pathologyName:string;
+  hospitalName:string;
   functions: Array<any>;
 
-  constructor(private hospitalService: HospitalService, private route: ActivatedRoute, private location: Location, public dialog: MatDialog) {
+  constructor(private hospitalService: HospitalService, private route: ActivatedRoute, private location: Location, public dialog: MatDialog,private router: Router) {
   }
 
   ngOnInit() {
@@ -118,7 +119,9 @@ export class CreateNewVersionComponent implements OnInit, AfterViewInit {
     this.route.params
       .switchMap((params: Params) => this.hospitalService.getHospitalById(+params['hospital_id']))
       .subscribe(h => {
-        this.hospital = h
+        this.hospital = h;
+        this.hospitalName = h['name'];
+
       });
 
     this.hospitalService.getLatestCDEVersion().subscribe(cde=>{this.latestCDEVersion = cde});
@@ -137,6 +140,12 @@ export class CreateNewVersionComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     //this.createSampleFileName();
+    this.route.params
+      .switchMap((params: Params) => this.hospitalService.getPathologyById(+params['pathology_id']))
+      .subscribe(path => {
+        console.log('Path name: '+path['name']);
+        this.createSampleFileName(path['name']);
+        this.pathologyName = path['name']});
 
   }
 
@@ -159,6 +168,10 @@ export class CreateNewVersionComponent implements OnInit, AfterViewInit {
       error => {
         if (error.status == '401') {
           alert("You need to be logged in to complete this action.");
+        }else if (error.status == '403'){
+          alert("You are not authorized to complete this action. Please validate that you have one of the following roles: " +
+            "ROLE_DC_CONTROL_"+this.pathologyName+" or ROLE_DC_HOSPITAL_"+ this.hospital["name"]);
+
         } else {
           alert("Error Occurred:\n"+error.error.message+"\n"+error.error.details+"\n"+error.error.nextActions);
         }
@@ -172,7 +185,7 @@ this.goBack();
 
   uploadFile() {
     console.log('Uploading file--: '+this.sampleFileName);
-    window.location.href = this.location.path() + '/' + this.sampleFileName;
+    this.router.navigateByUrl(this.location.path() + '/'+this.pathologyName+'/' +this.hospitalName+'/'+ this.sampleFileName);
   }
 
 

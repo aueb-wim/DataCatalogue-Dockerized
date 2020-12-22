@@ -14,8 +14,10 @@
 
 package com.admir.demiraj.datacatalogspringboot.service;
 
+import com.admir.demiraj.datacatalogspringboot.exceptionHandlers.UserActionLogging;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.AuthoritiesExtractor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties;
@@ -24,6 +26,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -40,10 +43,14 @@ import org.springframework.security.oauth2.client.resource.BaseOAuth2ProtectedRe
 import org.springframework.security.oauth2.client.token.grant.code.AuthorizationCodeResourceDetails;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableOAuth2Client;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -72,6 +79,11 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableOAuth2Client
 public class MIPSecurity extends WebSecurityConfigurerAdapter{
 
+    //@Autowired
+    //RoleBasedAuthendicator roleBasedAuthendicator;
+
+    @Autowired
+    RoleBasedAuthendicator roleBasedAuthendicator;
 
     @RequestMapping("/user")
     public Principal user(Principal principal) {
@@ -81,6 +93,10 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
     @RequestMapping("/userRoles")
     public Collection userRoles(Authentication auth) throws NoSuchFieldException {
         Collection collection = auth.getAuthorities();
+        System.out.println("auth authorities:: "+auth.getAuthorities());
+        System.out.println("auth details: "+auth.getDetails());
+        System.out.println("auth credentials: "+auth.getCredentials());
+        System.out.println("auth principal: "+auth.getPrincipal());
         return collection;
     }
 
@@ -99,18 +115,36 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
         return registration;
     }
 
+    public boolean checkauth(Authentication authentication){
+        return false;
+    }
+
+
+    public boolean checkUserHasAccessPathology(Authentication authentication, String pathology_name) {
+        // here you can check if the user has the correct role
+        // or implement more complex and custom authorization logic if necessary
+        System.out.println("Pathology authendication"+authentication.getAuthorities());
+
+        if(pathology_name.equals("dementia2")){
+            return true;
+        }else {
+            return false;
+        }
+
+    }
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         //http.addFilterBefore(new CORSFilter(), ChannelProcessingFilter.class);
 
-        http.antMatcher("/**")
+        http
+                //.antMatcher("/**")
                 .authorizeRequests()
                 //.antMatchers("/", "/login/keycloak", "/login**","/token","/user","/logout","/home", "/login",
-                .antMatchers("/", "/login", "/login**","/token","/logout","/home", "/login",
+                .antMatchers( "/login", "/login**","/token","/home","/perform_logout",
                         "/pathology/allPathologies",
                         "/pathology/allPathologies/*",
-                        "/pathology/allPathologies/**/name",
-                        "/pathology/allPathologies/**/latest_cde_version",
+                        "/pathology/allPathologies/*/name",
+                        "/pathology/allPathologies/*/latest_cde_version",
                         "/hospital/readExcel",
                         "/report/batchreport/all",
                         "/mapping/mapFunctionAndMapCdeByVariableId",
@@ -138,18 +172,51 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
                         "//mapping/getallfiles",
                         "/report/getBatchReport/*",
                         "/report/getVariableReport/*",
-                        "//mapping/getsample").permitAll()
+                        "//mapping/getsample")
 
+                .permitAll()
+
+                .antMatchers("/pathology/deletePathology/{pathology_name}",
+                        "/pathology/newPathology/{pathology_name}",
+                        "/hospitals/newHospital/{hospital_name}/{pathology_name}",
+                        "/hospitals/deleteHospital/{hospital_name}/{pathology_name}",
+                        "/versions/deleteCDEVersion/{version_id}/{pathology_name}",
+                        "/versions/newVersionCde/{version_name}/{pathology_name}",
+                        "/mapping/postCDE/{pathology_name}",
+                        "/versions/newVersion/{hospital_name}/{pathology_name}",
+                        "/mapping/postVariable/{hospital_name}/{pathology_name}",
+                        "versions/deleteVariableVersion/{pathology_name}/{hospital_name}/{hospital_id}/{version_id}")
+                .access("hasAnyAuthority('DC_CONTROL_'+#pathology_name,'DC_ADMIN','DC_HOSPITAL_'+#hospital_name)")
+                /*
+                .antMatchers(
+                        "/hospitals/newHospital/{hospital_name}/{pathology_name}",
+                        "/hospitals/deleteHospital/{hospital_name}/{pathology_name}",
+                        "/versions/newVersion/{hospital_name}/{pathology_name}",
+                        "/mapping/postVariable/{hospital_name}/{pathology_name}")
+                .access("hasAnyAuthority('ROLE_DC_HOSPITAL_'+#hospital_name,'ROLE_DC_ADMIN')")
+                */
+                .and().exceptionHandling().authenticationEntryPoint(new CustomLoginUrlAuthenticationEntryPoint("/login"))
+                .and().logout().addLogoutHandler(authLogoutHandler()).logoutSuccessUrl("/")
+                .logoutUrl("/perform_logout")
+                .and().logout().permitAll()
+                .and().csrf().ignoringAntMatchers("/perform_logout").csrfTokenRepository(csrfTokenRepository())
+
+
+                .and().addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
+                .addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class);
+                /*
                 //NOTE ADD THIS SINCE IT IS BEING REMOVED ONLY FOR TESTING
                 .anyRequest().hasRole("dc_admin")
-                .and().exceptionHandling().authenticationEntryPoint(new CustomLoginUrlAuthenticationEntryPoint("http://localhost:8086/login"))
                 .and().csrf().csrfTokenRepository(csrfTokenRepository())
+                .and().exceptionHandling().authenticationEntryPoint(new CustomLoginUrlAuthenticationEntryPoint("http://localhost:8086/login"))
                 .and().addFilterBefore(ssoFilter(), BasicAuthenticationFilter.class)
                 .addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
                 .logout()
-                .logoutSuccessUrl("http://localhost:4200")
+                .logoutUrl("/perform_logout")
+                .logoutSuccessUrl("http://172.16.10.138:8080/datacatalogue")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID");
+                */
 
 
     }
@@ -157,7 +224,7 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
         CompositeFilter filter = new CompositeFilter();
         List<Filter> filters = new ArrayList<>();
         System.out.println("client resources"+keycloak().client);
-        filters.add(ssoFilter(keycloak(), "/login"));
+        filters.add(ssoFilter(keycloak(), "/datacatalogue/login"));
         filter.setFilters(filters);
         return filter;
     }
@@ -171,7 +238,7 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
         System.out.println("token type is: "+client.getResource().getTokenType());
         tokenServices.setRestTemplate(template);
         filter.setTokenServices(tokenServices);
-        filter.setAuthenticationSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("http://localhost:4200/pathologies"));//<--- NEW
+        filter.setAuthenticationSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("/"));//<--- NEW
         return filter;
     }
 
@@ -207,19 +274,49 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
         formParams.add("client_id", client.getClient().getClientId());
         formParams.add("client_secret", client.getClient().getClientSecret());
         formParams.add("refresh_token", this.oauth2ClientContext.getAccessToken().getRefreshToken().getValue());
-
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
-
         UserActionLogging.LogAction("logoutUri is ", "http://195.251.252.222:2443");
         RequestEntity<MultiValueMap<String, String>> requestEntity =
                 new RequestEntity<>(formParams, httpHeaders, HttpMethod.POST,
                         URI.create("http://195.251.252.222:2443"));
-
         ResponseEntity<String> responseEntity = restTemplate.exchange(requestEntity, String.class);
     }
 */
 
+    @Value("${keycloak.client.logout_uri}")
+    private String logoutURI;
+
+    private LogoutHandler authLogoutHandler() {
+        return (request, response, authentication) -> {
+            System.out.println("request  uri: "+request.getRequestURI()+" request url"+request.getRequestURL());
+            logout();
+        };
+    }
+
+
+
+    public void logout() {
+        // Prepare request parameters
+        UserActionLogging.LogAction("refresh token ", this.oauth2ClientContext.getAccessToken().getRefreshToken().getValue());
+        RestTemplate restTemplate = new RestTemplate();
+        MultiValueMap<String, String> formParams = new LinkedMultiValueMap<>();
+        formParams.add("client_id", keycloak().client.getClientId());
+        formParams.add("client_secret", keycloak().client.getClientSecret());
+        formParams.add("refresh_token", this.oauth2ClientContext.getAccessToken().getRefreshToken().getValue());
+        // Prepare request headers
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
+        // Do the request
+        //UserActionLogging.LogAction("logoutUri is ", logoutUri);
+
+        RequestEntity<MultiValueMap<String, String>> requestEntity =
+                new RequestEntity<>(formParams, httpHeaders, HttpMethod.POST,
+                        URI.create(logoutURI));
+        // POSTリクエスト送信（ログアウト実行）
+
+        ResponseEntity<String> responseEntity = restTemplate.exchange(requestEntity, String.class);
+    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -258,6 +355,8 @@ public class MIPSecurity extends WebSecurityConfigurerAdapter{
                         cookie = new Cookie("XSRF-TOKEN", token);
                         cookie.setPath("/");
                         response.addCookie(cookie);
+                        //added due to integration issues
+                        cookie.setHttpOnly(false);
                     }
                 }
                 filterChain.doFilter(request, response);

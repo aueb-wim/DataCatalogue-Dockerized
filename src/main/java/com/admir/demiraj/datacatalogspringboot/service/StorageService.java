@@ -1,5 +1,6 @@
 package com.admir.demiraj.datacatalogspringboot.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -37,23 +38,67 @@ public class StorageService {
     private final Path variableReportLocation = Paths.get(FOLDER_VARIABLE_REPORTS);
 
 
+    public boolean isFilePresent(String possibleFileName,boolean isCdeVersion){
+        if(isCdeVersion){
+            if(Files.exists(Paths.get(FOLDER_CDES+possibleFileName))){
+                return true;
+            }else{
+                return false;
+            }
+        }else{
+            if(Files.exists(Paths.get(FOLDER_VARIABLES+possibleFileName))){
+                return true;
+            }else{
+                return false;
+            }
+        }
+
+
+    }
+
+    public  void changeFileName(String oldName, String newName, boolean isCde){
+        String properFolder;
+        if(isCde) {
+            properFolder = FOLDER_CDES;
+        }else{
+            properFolder = FOLDER_VARIABLES;
+        }
+
+        if(Files.exists(Paths.get(properFolder+oldName))){
+            File oldFile = new File(properFolder+oldName);
+            File newFile = new File(properFolder+newName);
+            boolean success = oldFile.renameTo(newFile);
+            if(success){
+                System.out.println("File has been renamed: " + oldName+"---->"+newName);
+            }
+        }
+
+    }
+
+    public String getFilePathOfVersionIfPresent(String possibleFileName,boolean isCdeVersion){
+
+        if(isCdeVersion){
+            if(Files.exists(Paths.get(FOLDER_CDES+possibleFileName))){
+                return FOLDER_CDES+possibleFileName;
+            }else{
+                return null;
+            }
+        }else{
+            if(Files.exists(Paths.get(FOLDER_VARIABLES+possibleFileName))){
+                return FOLDER_VARIABLES+possibleFileName;
+            }else{
+                return null;
+            }
+        }
+    }
     public void validateFileName(String location, String fileName, boolean CDEFile) throws CustomException{
+
         if(Files.exists(Paths.get(location+"/"+fileName))){
             System.out.println("File exists");
             throw new CustomException("This file already exists.", "We cannot use the same version name twice for a " +
                     "single pathology ", "Please create a new version");
         }
 
-        if(Files.exists(Paths.get(location+"/"+fileName))){
-            throw new CustomException("This file already exists.", "We cannot use the same version name twice for a " +
-                    "single pathology ", "Please create a new version");
-        }
-
-        // Validating that the file isn't already saved
-        if(Files.exists(Paths.get(location+"/"+fileName))){
-            throw new CustomException("This file already exists.", "We cannot use the same version name twice for a " +
-                    "single pathology ", "Please create a new version");
-        }
 
         // Check that the name contains 2 underscores
         int numberOfUndescores = fileName.length() - fileName.replaceAll("_","").length();

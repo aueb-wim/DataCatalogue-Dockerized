@@ -22,7 +22,7 @@
     "logLevel": "debug"
   },
 
-  "/logout": {
+  "/perform_logout": {
     "target": "http://datacatalogue_backend:8086/",
     "secure": false,
     "logLevel": "debug"

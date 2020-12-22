@@ -1,27 +1,17 @@
-# base image
-FROM node:8.12.0
+#Stage 1: Build an Angular Docker Image
+FROM node:8.12.0 as build
 
-# install chrome for protractor tests
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
-RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
-RUN apt-get update && apt-get install -yq google-chrome-stable
-
-# set working directory
 WORKDIR /app
-
-# add `/app/node_modules/.bin` to $PATH
-ENV PATH /app/node_modules/.bin:$PATH
-
-# install and cache app dependencies
-COPY package.json /app/package.json
-#RUN npm -g install
+COPY package*.json /app/
 RUN npm install
 RUN npm install @angular/cli@6.2.3
-
-
-# add app
 COPY . /app
+ARG configuration=production
+#--base-href=/datacatalogue --deploy-url /datacatalogue/
+RUN npm run build -- --outputPath=./dist/out --configuration $configuration
+#RUN npm run build -- --outputPath=./dist/out --configuration $configuration ---base-href='datacatalogue'
 
-# start app
-RUN cd
-CMD bash -c "ng serve --host 0.0.0.0 --prod --baseHref /datacatalogue/ --servePath /datacatalogue/ --optimization=true --watch=false --verbose=false"
+# Stage 2, use the compiled app, ready for production with Nginx
+FROM nginx
+COPY --from=build /app/dist/out/ /usr/share/nginx/html
+COPY /nginx-custom.conf /etc/nginx/conf.d/default.conf

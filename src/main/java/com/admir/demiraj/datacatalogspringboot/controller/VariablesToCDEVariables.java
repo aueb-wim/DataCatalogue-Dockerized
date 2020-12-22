@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -61,22 +62,25 @@ public class VariablesToCDEVariables {
     List<String> files = new ArrayList<String>();
 
     /** Method that handle the upload of multipart file (excel file in our case)*/
-    @PostMapping("/postCDE")
-    public ResponseEntity<String> handleFileUploadCDE(@RequestParam("file") MultipartFile file) throws FileNotFoundException, IOException {
+    @PostMapping("/postCDE/{pathology_name}")
+    public ResponseEntity<String> handleFileUploadCDE(@RequestParam("file") MultipartFile file,@PathVariable String pathology_name) throws FileNotFoundException, IOException {
         String message = "CDE File Uploaded Successfully";
             System.out.println(message);
             storageService.store(file,true);
             String fileName = file.getOriginalFilename();
             files.add(fileName);
-            uploadCdes.readSingleExcelFile(fileName);
+            uploadCdes.readSingleExcelFile(fileName,pathology_name);
             return ResponseEntity.status(HttpStatus.OK).body(message);
 
     }
 
      ////!NOTE CHANGE THIS TO GET A SINGLE FILE
+    //changed
     /** Method that handle the upload of multipart file (excel file in our case)*/
-    @PostMapping("/postVariable")
-    public ResponseEntity<String> handleFileUploadVariable(@RequestParam("file") MultipartFile file) throws FileNotFoundException, IOException {
+    @PostMapping("/postVariable/{hospital_name}/{pathology_name}")
+    public ResponseEntity<String> handleFileUploadVariable(@RequestParam("file") MultipartFile file,
+                                                           @PathVariable String pathology_name,
+                                                           @PathVariable String hospital_name) throws FileNotFoundException, IOException {
         String message = "Variable File Uploaded Successfully";
         System.out.println(message);
         storageService.store(file,false);
@@ -84,7 +88,7 @@ public class VariablesToCDEVariables {
         String fileName = file.getOriginalFilename();
         System.out.println("filename when uploading file is: "+fileName);
         files.add(fileName);
-        uploadVariables.readSingleExcelFile(fileName);
+        uploadVariables.readSingleExcelFile(fileName,pathology_name,hospital_name);
         System.out.println("Upload finished");
         //uploadVariables.readExcelFile();
         return ResponseEntity.status(HttpStatus.OK).body(message);
@@ -117,9 +121,19 @@ public class VariablesToCDEVariables {
     @ResponseBody
     public ResponseEntity<Resource> getSample(@PathVariable(value = "filename") String fileName) {
         Resource file = storageService.loadSampleOrReport(fileName,0);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
+        headers.add("Pragma", "no-cache");
+        headers.add("Expires", "0");
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,  "attachment; filename=\"" + fileName + "\"")
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(file);
+
+
+        //return ResponseEntity.ok()
+         //       .header(HttpHeaders.CONTENT_DISPOSITION,  "attachment; filename=\"" + fileName + "\"")
+          //      .body(file);
     }
 
 

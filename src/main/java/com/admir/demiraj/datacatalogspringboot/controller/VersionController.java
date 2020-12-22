@@ -137,26 +137,28 @@ public class VersionController {
         return "ok";
     }
 
-    @PostMapping(value = "/newVersion")
+
+    @PostMapping(value = "/newVersion/{hospital_name}/{pathology_name}")
     public void create2(@RequestBody String ver){
         JSONArray jr = new JSONArray(ver);
         customMapper.mapVersion(jr);
         //return "ok";
     }
 
-    @PostMapping(value = "/newVersionCde")
+    @PostMapping(value = "/newVersionCde/{version_name}/{pathology_name}")
     public void createCdeVersion(@RequestBody String ver){
         JSONArray jr = new JSONArray(ver);
         customMapperCDEs.mapCdeVersion(jr);
         //return "ok";
     }
 
-    @GetMapping(value = "/deleteCDEVersion/{version_id}")
+    //changed
+    @GetMapping(value = "/deleteCDEVersion/{version_id}/{pathology_name}")
     public void deleteCDEVersion(@PathVariable(value ="version_id") Long versionId){
 
             BigInteger verId = BigInteger.valueOf(versionId);
             Versions versionToDelete = versionDAO.getVersionById(verId);
-            // Validate that there is no hospital that
+            // Validate that there is no hospital variables that map to that specific cde version
            //NOTE REMOVE COMMENTS
             CustomDictionary customDictionary = versionDAO.hospitalsAndVersionsMappingToCDEVersion(versionToDelete);
             if(!customDictionary.isEmpty()){
@@ -171,8 +173,10 @@ public class VersionController {
     }
 
 
-    @GetMapping(value = "/deleteVariableVersion/{hospital_id}/{version_id}")
-    public void deleteVariableVersion(@PathVariable(value ="hospital_id") Long hospitalId, @PathVariable(value ="version_id") Long versionId){
+    @GetMapping(value = "/deleteVariableVersion/{pathology_name}/{hospital_name}/{hospital_id}/{version_id}")
+    public void deleteVariableVersion(@PathVariable(value ="hospital_id") Long hospitalId,
+                                      @PathVariable String pathology_name, @PathVariable String hospital_name,
+                                      @PathVariable(value ="version_id") Long versionId){
         // VersionId is given as string and casted ti bigInteger.Get versionBYid
         BigInteger verId = BigInteger.valueOf(versionId);
         Versions versionToDelete = versionDAO.getVersionById(verId);

@@ -45,27 +45,29 @@ export class HospitalService {
   }
 
   createNewPathology (pathology_name: string): Observable<any> {
-    return this.http.post<any>(this.frontend_ip +'/pathology/newPathology', pathology_name,{headers:this.headers});
+    return this.http.post<any>(this.frontend_ip +'/pathology/newPathology/'+pathology_name, pathology_name,{headers:this.headers});
   }
 
   deletePathology (pathology_name: string): Observable<any> {
-    return this.http.post<any>(this.frontend_ip +'/pathology/deletePathology', pathology_name,{headers:this.headers});
+    return this.http.post<any>(this.frontend_ip +'/pathology/deletePathology/'+pathology_name, pathology_name,{headers:this.headers});
   }
 
   createNewHospital2 (hospital_name: string, pathology_name: string): Observable<any> {
     return this.http.post<any>(this.frontend_ip +'/hospitals/newHospital', [hospital_name, pathology_name], {headers:this.headers});
   }
 
+  //changed
   createNewHospital (hospitalName: string, pathologyName: string): Observable<any> {
     let params = new HttpParams()
       .set('hospitalName',hospitalName)
       .set('pathologyName', pathologyName)
 
-    return this.http.post<any>(this.frontend_ip +'/hospitals/newHospital', params, {headers:this.headers});
+    return this.http.post<any>(this.frontend_ip +'/hospitals/newHospital/'+hospitalName+'/'+pathologyName, params, {headers:this.headers});
   }
 
-  deleteHospital (hospital_name: string): Observable<any> {
-    return this.http.post<any>(this.frontend_ip +'/hospitals/deleteHospital', hospital_name,{headers:this.headers});
+  //changed
+  deleteHospital (hospital_name: string, pathology_name: string): Observable<any> {
+    return this.http.post<any>(this.frontend_ip +'/hospitals/deleteHospital/'+hospital_name+'/'+pathology_name, hospital_name,{headers:this.headers});
   }
 
   getPathologyNameById(pathology_id: number):Observable<any>{
@@ -84,21 +86,21 @@ export class HospitalService {
   getAllCdeVersions():Observable<any> {
     return this.http.get(this.frontend_ip + '/CDE/allCdeVersions',{headers:this.headers});
   }
-/*
+
   login():Observable<any>{
-    return this.http.post('/login',{headers:this.headers});
-  }*/
+    return this.http.post(this.frontend_ip +'/login',{headers:this.headers});
+  }
 
   logout():Observable<any>{
-    return this.http.post(this.frontend_ip + '/logout',{headers:this.headers});
+    return this.http.post(this.frontend_ip + '/perform_logout',{headers:this.headers});
   }
 
   getUser():Observable<any>{
-    return this.http.get('/user',{headers:this.headers});
+    return this.http.get(this.frontend_ip +'/user',{headers:this.headers});
   }
 
   getUserRoles():Observable<any>{
-    return this.http.get('/userRoles',{headers:this.headers});
+    return this.http.get(this.frontend_ip +'/userRoles',{headers:this.headers});
   }
 
   hospitalReadExcel():Observable<any> {
@@ -130,13 +132,15 @@ export class HospitalService {
 
   }
 
-  deleteVaribaleVersion(hospitalId: string, versionId: string): Observable<any>{
+  deleteVaribaleVersion( pathologName: string, hospitalName:string, hospitalId: string, versionId: string): Observable<any>{
 
-    return this.http.get(this.frontend_ip +'/versions/deleteVariableVersion/'+hospitalId+'/'+versionId, {headers:this.headers});
+    return this.http.get(this.frontend_ip +'/versions/deleteVariableVersion/'+pathologName+'/'+hospitalName+'/'
+      +hospitalId+'/'+versionId, {headers:this.headers});
   }
 
-  deleteCDEVersion(versionId: string):Observable<any>{
-    return this.http.get(this.frontend_ip + '/versions/deleteCDEVersion/'+versionId,{headers:this.headers});
+  //changed
+  deleteCDEVersion(pathologyName: string, versionId: string):Observable<any>{
+    return this.http.get(this.frontend_ip + '/versions/deleteCDEVersion/'+versionId+'/'+pathologyName,{headers:this.headers});
   }
 
   getlatestVersionIdByHospId(hospital_id: number):Observable<any>{
@@ -208,22 +212,25 @@ export class HospitalService {
     return this.http.request(req);
   }
 
+  //changed - for hospitals as well
   createNewVersion (pathologyName: string, hospitalName: string, versionName: string, version: any): Observable<any> {
-    return this.http.post<any>(this.frontend_ip + '/versions/newVersion', [pathologyName,hospitalName,versionName,version],{headers:this.headers});
+    return this.http.post<any>(this.frontend_ip + '/versions/newVersion/'+hospitalName+'/'+pathologyName, [pathologyName,hospitalName,versionName,version],{headers:this.headers});
   }
 
+  //changed
   createNewVersionCde(pathologyName:string,versionName:string, version: any):Observable<any> {
-    return this.http.post<any>(this.frontend_ip + '/versions/newVersionCde', [pathologyName,versionName,version],{headers:this.headers});
+    return this.http.post<any>(this.frontend_ip + '/versions/newVersionCde/'+versionName+'/'+pathologyName, [pathologyName,versionName,version],{headers:this.headers});
   }
 
   ///////////////////////////UPLOAD RELATED
-  pushFileToStorageCDE(file: File): Observable<HttpEvent<{}>> {
+  //changed
+  pushFileToStorageCDE(pathologyName: string, file: File): Observable<HttpEvent<{}>> {
     const formdata: FormData = new FormData();
 
     formdata.append('file', file);
 
 
-    const req = new HttpRequest('POST', this.frontend_ip + '/mapping/postCDE', formdata, {
+    const req = new HttpRequest('POST', this.frontend_ip + '/mapping/postCDE/'+pathologyName, formdata, {
 
       reportProgress: true,
       responseType: 'text'
@@ -232,13 +239,15 @@ export class HospitalService {
     return this.http.request(req);
   }
 
-  pushFileToStorageVariable(file: File): Observable<HttpEvent<{}>> {
+
+  // changed
+  pushFileToStorageVariable(pathologyName:string,hospitalName:string, file: File): Observable<HttpEvent<{}>> {
     const formdata: FormData = new FormData();
 
     formdata.append('file', file);
 
 
-    const req = new HttpRequest('POST', this.frontend_ip + '/mapping/postVariable', formdata, {
+    const req = new HttpRequest('POST', this.frontend_ip + '/mapping/postVariable/'+hospitalName+'/'+pathologyName, formdata, {
 
       reportProgress: true,
       responseType: 'text'
@@ -254,7 +263,7 @@ export class HospitalService {
   }
   //////////////////////////////////////// GET SAMPLE FILE
   getSample(sampleVersion:string):Observable<any>{
-    return this.http.get(this.frontend_ip + '/mapping/getsample/'+sampleVersion,{headers:this.headers});
+    return this.http.get(this.frontend_ip + '/mapping/getsample/'+sampleVersion,{headers:this.headers,responseType: 'blob'});
   }
   getBatchReport(filename:string):Observable<any>{
     return this.http.get(this.frontend_ip + '/report/getBatchReport/'+filename + '.csv',{headers:this.headers});

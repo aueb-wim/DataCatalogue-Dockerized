@@ -4,7 +4,7 @@ import {ActivatedRoute, Params, Router} from "@angular/router";
 import {Location} from "@angular/common";
 import {MatDialog} from "@angular/material";
 import {DeviceDetectorService} from "ngx-device-detector";
-import {stringify} from "querystring";
+//import {stringify} from "querystring";
 
 @Component({
   selector: 'app-create-new-version-cde',
@@ -99,6 +99,9 @@ export class CreateNewVersionCdeComponent implements OnInit {
       error => {
         if (error.status == '401') {
           alert("You need to be logged in to complete this action.");
+        }else if (error.status == '403'){
+          alert("You are not authorized to complete this action. Please validate that you have the role: ROLE_DC_CONTROL_"+this.pathologyName );
+
         } else {
           alert("An error has occurred.\n"+error.error);
         }
@@ -124,7 +127,7 @@ export class CreateNewVersionCdeComponent implements OnInit {
   }
 
   uploadFile() {
-    window.location.href = this.location.path() + '/' + this.sampleFileName;
+    this.router.navigateByUrl(this.location.path() + '/' + this.sampleFileName);
       // works
      // window.location.href = this.location.path() + '/new-version/' + this.downloadName+this.currentVersionName+'.xlsx';
   }

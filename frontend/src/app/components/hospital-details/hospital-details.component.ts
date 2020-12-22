@@ -36,6 +36,7 @@ export class HospitalDetailsComponent implements OnInit, OnChanges, AfterViewIni
   hospital: any;
   url = this.location.path();
   //currentVersionId = 4; /// be careful when changing the database , it should be assigned to an existing id
+  pathologyName:string;
 
   currentVersionId:number;
   currentVersionName:string;
@@ -92,6 +93,14 @@ export class HospitalDetailsComponent implements OnInit, OnChanges, AfterViewIni
       this.currentHospitalName = hosp['name'];
       this.hospital = hosp
     });
+
+    this.route.params.switchMap((params: Params) => this.hospitalService.getPathologyNameById(+params['pathology_id'])).subscribe(pathName => {
+      this.pathologyName = pathName;
+
+    });
+
+
+
 
   }
 
@@ -248,7 +257,6 @@ export class HospitalDetailsComponent implements OnInit, OnChanges, AfterViewIni
     this.searchTermVar = option.label;
   }
 
-
   public deselected(option: IOption): void {
     this.searchTermVar = "";
   }
@@ -277,7 +285,7 @@ export class HospitalDetailsComponent implements OnInit, OnChanges, AfterViewIni
   newVersionUrl(){
 
       //this.router.navigateByUrl('/hospitals/'+this.hospital['hospital_id']+'/new-version');
-    window.location.href = this.location.path() + '/new-version';
+    this.router.navigateByUrl(this.location.path() + '/new-version');
   }
 
   editVersionUrl(){
@@ -287,14 +295,15 @@ export class HospitalDetailsComponent implements OnInit, OnChanges, AfterViewIni
       alert("Only normal versions can be edited not the harmonized ones. New harmonized versions are produced when a " +
         "normal version is changed");
     }else {
-      window.location.href = this.location.path() + '/edit-version/' + this.currentVersionId;
+      this.router.navigateByUrl( this.location.path() + '/edit-version/' + this.currentVersionId);
     }
   }
 
 
   // Delete a VariableVersion
   deleteCurrentVariableVersion():void{
-    this.hospitalService.deleteVaribaleVersion(this.hospital.hospital_id,this.currentVersionId.toString()).subscribe(
+    this.hospitalService.deleteVaribaleVersion(this.pathologyName, this.hospital.name, this.hospital.hospital_id,
+      this.currentVersionId.toString()).subscribe(
       data => {
         window.alert("Version "+this.currentVersionName+" with id: "+this.currentVersionId+" was deleted");
         window.location.reload();
@@ -302,6 +311,10 @@ export class HospitalDetailsComponent implements OnInit, OnChanges, AfterViewIni
       error => {
         if (error.status == '401') {
           alert("You need to be logged in to complete this action.");
+        }else if (error.status == '403'){
+          alert("You are not authorized to complete this action. Please validate that you have one of the following roles: " +
+            "ROLE_DC_CONTROL_"+this.pathologyName+" or ROLE_DC_HOSPITAL_"+ this.currentHospitalName);
+
         } else {
           //alert("An error has occurred: "+error.error);
 

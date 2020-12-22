@@ -2,6 +2,10 @@ import {Component, Input, OnInit} from '@angular/core';
 import {Observable} from "rxjs";
 import {HospitalService} from "../../shared/hospital.service";
 import {HttpClient, HttpEventType, HttpResponse} from "@angular/common/http";
+//import {FileSaver,Blob} from 'angular-file-saver';
+import { saveAs } from 'file-saver';
+import {ActivatedRoute} from "@angular/router";
+
 
 @Component({
   selector: 'app-form-upload-cdes',
@@ -15,21 +19,27 @@ export class FormUploadCdesComponent implements OnInit {
   currentFileUpload: File;
   progress: { percentage: number } = { percentage: 0 };
   sampleFile: Observable<string>;
+  pathologyName:string;
 
-  constructor(private hospitalService: HospitalService, private http: HttpClient) { }
+  constructor(private hospitalService: HospitalService, private http: HttpClient,private route: ActivatedRoute) { }
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.route.params.subscribe(params=>
+      this.pathologyName = params['pathology_name']);
+  }
 
 
   selectFile(event) {
     this.selectedFiles = event.target.files;
   }
 
+
+
   upload() {
     this.progress.percentage = 0;
 
     this.currentFileUpload = this.selectedFiles.item(0);
-    this.hospitalService.pushFileToStorageCDE(this.currentFileUpload).subscribe(event => {
+    this.hospitalService.pushFileToStorageCDE(this.pathologyName, this.currentFileUpload).subscribe(event => {
       if (event.type === HttpEventType.UploadProgress) {
         this.progress.percentage = Math.round(100 * event.loaded / event.total);
       } else if (event instanceof HttpResponse) {
@@ -40,6 +50,9 @@ export class FormUploadCdesComponent implements OnInit {
     },error => {
       if(error.status=='401'){
         alert("You need to be logged in to complete this action.");
+      }else if (error.status == '403'){
+        alert("You are not authorized to complete this action. Please validate that you have the role: ROLE_DC_CONTROL_"+this.pathologyName );
+
       }else{
         //alert("You need to be logged in to complete this action2.");
         //alert("You need to be logged in to complete this action.");
@@ -59,16 +72,15 @@ export class FormUploadCdesComponent implements OnInit {
       .subscribe(
         data=>{
           console.log("sample data is: "+data);
-          window.open("http://localhost:4200/mapping/getsample/"+this.sampleNameVersion);
+          saveAs(new Blob([data], {type: 'application/vnd.ms-excel' }),this.sampleNameVersion+ '.xlsx');
           console.log('XLSX template downloaded...');
         },
         error => {
           if(error.status=='401'){
             alert("You need to be logged in to complete this action.");
           }else{
-            //alert("You need to be logged in to complete this action2.");
-            window.open("http://localhost:4200/mapping/getsample/"+this.sampleNameVersion);
-            console.log('XLSX template downloaded...');
+            alert("alert"+error.message);
+
           }});
 
 

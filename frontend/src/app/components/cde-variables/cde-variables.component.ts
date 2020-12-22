@@ -228,7 +228,8 @@ export class CdeVariablesComponent implements OnInit, OnChanges, AfterViewInit {
 
     //test
     //window.location.href = this.location.path() + '/new-cde-version';
-    window.location.href = this.location.path() + '/new-cde-version/'+this.currentPathologyName.toLowerCase( );
+
+    this.router.navigateByUrl(this.location.path() + '/new-cde-version/'+this.currentPathologyName.toLowerCase( ));
 
 
   }
@@ -315,19 +316,24 @@ export class CdeVariablesComponent implements OnInit, OnChanges, AfterViewInit {
   editVersionUrl(){
 
     //this.router.navigateByUrl('/hospitals/'+this.hospital['hospital_id']+'/new-version');
-    window.location.href = this.location.path() + '/'+this.currentPathologyName+'/edit-cde-version/'+this.currentVersionId;
+    this.router.navigateByUrl( this.location.path() + '/'+this.currentPathologyName+'/edit-cde-version/'+this.currentVersionId);
   }
 
  // Delete a CDEVersion
   deleteCurrentCDEVersion():void{
-      this.hospitalService.deleteCDEVersion(this.currentVersionId).subscribe(
+      this.hospitalService.deleteCDEVersion(this.currentPathologyName, this.currentVersionId).subscribe(
         data => {
           window.alert("Version "+this.currentVersionName+" with id: "+this.currentVersionId+" was deleted");
-          window.location.reload();
+          //this.router.navigateByUrl(this.router.url);
+          //window.location.reload();
+
         },
         error => {
           if (error.status == '401') {
             alert("You need to be logged in to complete this action.");
+          } else if (error.status == '403'){
+            alert("You are not authorized to complete this action. Please validate that you have the role: ROLE_DC_CONTROL_"+this.currentPathologyName );
+
           } else {
             //alert("An error has occurred: "+error.error);
 

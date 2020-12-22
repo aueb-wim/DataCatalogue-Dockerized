@@ -64,12 +64,17 @@ ngAfterViewInit(){
 
   newVersionUrl(){
     console.log( "--current location-"+this.location.path());
-    window.location.href = this.location.path() + '/new-cde-version/'+this.currentPathologyName.toLowerCase( );
+
+    //window.location.href = 'datacatalogue'+this.location.path() + '/new-cde-version/'+this.currentPathologyName.toLowerCase( );
+    this.router.navigateByUrl(this.location.path() + '/new-cde-version/'+this.currentPathologyName.toLowerCase( ));
+    //this.location.go( this.location.path() + '/new-cde-version/'+this.currentPathologyName.toLowerCase( ));
 
   }
 
   uploadFile() {
-    window.location.href = this.location.path() + '/new-cde-version/'+this.currentPathologyName+'/' + this.sampleFileName;
+    //window.location.href = this.location.path() + '/new-cde-version/'+this.currentPathologyName+'/' + this.sampleFileName;
+    this.router.navigateByUrl(this.location.path() + '/new-cde-version/'+this.currentPathologyName+'/' + this.sampleFileName);
+
     // works
     // window.location.href = this.location.path() + '/new-version/' + this.downloadName+this.currentVersionName+'.xlsx';
   }
@@ -129,6 +134,10 @@ ngAfterViewInit(){
         error => {
           if (error.status == '401') {
             alert("You need to be logged in to complete this action.");
+          }else if (error.status == '403'){
+            alert("You are not authorized to complete this action. Please validate that you have one of the following roles: " +
+              "ROLE_DC_CONTROL_"+this.currentPathologyName+" or ROLE_DC_HOSPITAL_"+ this.hospitalName);
+
           } else {
             alert("An error has occurred.");
           }
@@ -152,7 +161,7 @@ ngAfterViewInit(){
     } else {
 
 
-      this.hospitalService.deleteHospital(this.hospitalNameToDelete.toLowerCase()).subscribe(
+      this.hospitalService.deleteHospital(this.hospitalNameToDelete.toLowerCase(),this.currentPathologyName.toLowerCase()).subscribe(
         data => {
           window.alert("Hospital was deleted");
           this.route.params.switchMap((params: Params) => this.hospitalService.getPathologyById(+params['pathology_id'])).subscribe(path => {
@@ -174,6 +183,10 @@ ngAfterViewInit(){
         error => {
           if (error.status == '401') {
             alert("You need to be logged in to complete this action.");
+          }else if (error.status == '403'){
+            alert("You are not authorized to complete this action. Please validate that you have one of the following roles: " +
+              "ROLE_DC_CONTROL_"+this.currentPathologyName+" or ROLE_DC_HOSPITAL_"+ this.hospitalName);
+
           } else {
             alert("An error has occurred.");
           }
